@@ -30,6 +30,7 @@ class CartScreen extends StatelessWidget {
 
                 final product = items[index];
 
+                return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Card(
                     child: ListTile(
@@ -55,7 +56,6 @@ class CartScreen extends StatelessWidget {
                       ),
                       title: Text(product.title),
                       subtitle: Text(product.category),
-                      trailing: Text('${product.price.toStringAsFixed(2)}'),
                       trailing: Text('\$${product.price.toStringAsFixed(2)}'),
                     ),
                   ),
