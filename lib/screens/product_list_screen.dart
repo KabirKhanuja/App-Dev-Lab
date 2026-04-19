@@ -20,6 +20,8 @@ class ProductListScreen extends StatelessWidget {
       return const Center(child: Text('No products available.'));
     }
 
+    // LAB 7: Dynamic content rendering with ListView
+    // The list builds only visible items, so it scales better for more products
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: products.length,
@@ -27,6 +29,8 @@ class ProductListScreen extends StatelessWidget {
       itemBuilder: (context, index) {
         final product = products[index];
 
+        // LAB 7: Each item is presented as a Card widget
+        // Cards make each product block clear and easy to scan in the UI
         return Card(
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
@@ -54,6 +58,8 @@ class ProductListScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
+                  // LAB 3: Expanded helps responsive layout in a Row
+                  // It lets text take remaining space without overflowing image area
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

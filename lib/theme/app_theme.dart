@@ -8,6 +8,8 @@ class AppTheme {
     );
 
     return ThemeData(
+      // LAB 3: App-wide Material 3 styling (colors, theme, component shapes).
+      // This keeps the UI consistent and follows Google's design system.
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,

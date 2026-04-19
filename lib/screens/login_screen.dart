@@ -11,6 +11,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // LAB 4: Form key + controllers manage user input
+  // This gives us control over form validation and field values
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -54,6 +56,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Form(
+                  // LAB 3: Login UI built with layout widgets like Column/SizedBox
+                  // The spacing and alignment are handled using simple layout widgets
+
+                  // LAB 4: Form + TextFormField validators for input validation
+                  // Each input is checked before allowing navigation to the home screen
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

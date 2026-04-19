@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _apiService = ApiService();
   final _storageService = StorageService();
+  // LAB 8: api data source is consumed on the home screen
+  // so products are loaded from the internet and then shown in the list ui
   late final Future<List<Product>> _productsFuture;
   final List<Product> _cartItems = [];
   int _cartCount = 0;
@@ -35,12 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // LAB 6: setState updates UI when local state changes
+    // whenever these saved values are loaded, the badge updates instantly on screen
     setState(() {
       _cartCount = savedCartCount;
     });
   }
 
   Future<void> _addToCart(Product product) async {
+    // LAB 6: StatefulWidget + setState for interactive cart updates
+    // every add action changes the in memory state and then refreshes the visible count
     setState(() {
       _cartItems.add(product);
       _cartCount++;
@@ -71,8 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openCart() {
+    // LAB 5: Navigator.push to move between screens
+    // This creates a new route and opens the cart page on top
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        // LAB 5: Passing data between screens
+        // The cart screen receives current items so it can render totals and rows
         builder: (context) =>
             CartScreen(items: List<Product>.unmodifiable(_cartItems)),
       ),
@@ -121,9 +131,13 @@ class _HomeScreenState extends State<HomeScreen> {
             products: products,
             onAddToCart: _addToCart,
             onProductTap: (product) {
+              // LAB 5: Multi page navigation to product details
+              // Tapping an item takes the user to a separate detail view
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => ProductDetailScreen(
+                    // LAB 5: Passing selected product to detail screen
+                    // The selected product object is sent directly to the next page
                     product: product,
                     onAddToCart: _addToCart,
                   ),

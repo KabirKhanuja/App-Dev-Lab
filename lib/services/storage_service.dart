@@ -5,11 +5,15 @@ class StorageService {
   static const String _cartCountKey = 'cart_count';
 
   Future<bool> isLoggedIn() async {
+    // LAB 9: Retrieve saved preference values from local storage
+    // This reads a small flag from device storage
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_loginKey) ?? false;
   }
 
   Future<void> saveLoginStatus(bool value) async {
+    // LAB 9: Persist login status for session recovery
+    // It stores whether the user has already logged in
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_loginKey, value);
   }
@@ -20,11 +24,15 @@ class StorageService {
   }
 
   Future<int> getCartCount() async {
+    // LAB 9: Read saved cart count preference
+    // We restore previous cart count to keep continuity after app restart
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_cartCountKey) ?? 0;
   }
 
   Future<void> saveCartCount(int value) async {
+    // LAB 9: Store cart count locally
+    // This makes the cart badge persist across launches
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_cartCountKey, value);
   }
