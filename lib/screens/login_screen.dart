@@ -1,7 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/storage_service.dart';
-import 'home_screen.dart';
+import '../services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +16,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _storageService = StorageService();
+  final _auth = FirebaseAuth.instance;
+  final _firestoreService = FirestoreService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,15 +32,94 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    await _storageService.saveLoginStatus(true);
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (!mounted) {
+    try {
+      final credentials = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final user = credentials.user;
+      if (user != null) {
+        await _firestoreService.upsertUserProfile(user: user);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      _showAuthError(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSignup() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (context) => const HomeScreen()),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final credentials = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final user = credentials.user;
+      if (user != null) {
+        final inferredName = _emailController.text.trim().split('@').first;
+        await _firestoreService.upsertUserProfile(
+          user: user,
+          name: inferredName,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account created. You are signed in.')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      _showAuthError(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showAuthError(FirebaseAuthException e) {
+    String message = 'Authentication failed. Please try again.';
+    if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+      message = 'No account found with these credentials.';
+    } else if (e.code == 'wrong-password') {
+      message = 'Incorrect password.';
+    } else if (e.code == 'email-already-in-use') {
+      message = 'This email is already registered.';
+    } else if (e.code == 'invalid-email') {
+      message = 'Please enter a valid email address.';
+    } else if (e.code == 'weak-password') {
+      message = 'Password is too weak. Use at least 6 characters.';
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -110,8 +191,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             return 'Enter your password';
                           }
 
-                          if (value.length < 4) {
-                            return 'Password must be at least 4 characters';
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
                           }
 
                           return null;
@@ -119,8 +200,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       FilledButton(
-                        onPressed: _handleLogin,
-                        child: const Text('Login'),
+                        onPressed: _isLoading ? null : _handleLogin,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Login'),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: _isLoading ? null : _handleSignup,
+                        child: const Text('Create Account'),
                       ),
                     ],
                   ),

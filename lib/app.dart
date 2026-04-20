@@ -1,8 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
-import 'services/storage_service.dart';
 import 'theme/app_theme.dart';
 
 class MiniCartApp extends StatelessWidget {
@@ -16,16 +16,16 @@ class MiniCartApp extends StatelessWidget {
       title: 'MiniCart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: FutureBuilder<bool>(
-        // LAB 9: Read saved login state from local storage on startup
-        // This avoids asking the user to log in again every time the app opens
-        future: StorageService().isLoggedIn(),
+      home: StreamBuilder<User?>(
+        // LAB 9: FirebaseAuth session stream decides login/home at startup.
+        // If a user session exists, app goes to home; otherwise it stays on login.
+        stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const _SplashScreen();
           }
 
-          if (snapshot.data == true) {
+          if (snapshot.data != null) {
             return const HomeScreen();
           }
 

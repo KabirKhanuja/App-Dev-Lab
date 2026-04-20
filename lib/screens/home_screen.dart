@@ -1,8 +1,11 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 import '../services/api_service.dart';
-import '../services/storage_service.dart';
+import '../services/firestore_service.dart';
 import 'cart_screen.dart';
 import 'login_screen.dart';
 import 'product_detail_screen.dart';
@@ -17,42 +20,74 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _apiService = ApiService();
-  final _storageService = StorageService();
+  final _firestoreService = FirestoreService();
   // LAB 8: api data source is consumed on the home screen
   // so products are loaded from the internet and then shown in the list ui
   late final Future<List<Product>> _productsFuture;
-  final List<Product> _cartItems = [];
+  StreamSubscription<int>? _cartCountSubscription;
   int _cartCount = 0;
 
   @override
   void initState() {
     super.initState();
     _productsFuture = _apiService.fetchProducts();
-    _loadCartCount();
+    _watchCartCount();
   }
 
-  Future<void> _loadCartCount() async {
-    final savedCartCount = await _storageService.getCartCount();
-    if (!mounted) {
+  @override
+  void dispose() {
+    _cartCountSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _watchCartCount() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       return;
     }
 
-    // LAB 6: setState updates UI when local state changes
-    // whenever these saved values are loaded, the badge updates instantly on screen
-    setState(() {
-      _cartCount = savedCartCount;
+    _cartCountSubscription = _firestoreService.cartCountStream(user.uid).listen((
+      count,
+    ) {
+      if (!mounted) {
+        return;
+      }
+
+      // LAB 6: setState updates UI when local state changes
+      // whenever cart data changes in Firestore, badge count updates instantly
+      setState(() {
+        _cartCount = count;
+      });
     });
   }
 
-  Future<void> _addToCart(Product product) async {
-    // LAB 6: StatefulWidget + setState for interactive cart updates
-    // every add action changes the in memory state and then refreshes the visible count
-    setState(() {
-      _cartItems.add(product);
-      _cartCount++;
-    });
+  Future<String?> _requireUserId() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user.uid;
+    }
 
-    await _storageService.saveCartCount(_cartCount);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Session expired. Please login again.')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+    return null;
+  }
+
+  Future<void> _addToCart(Product product) async {
+    final userId = await _requireUserId();
+    if (userId == null) {
+      return;
+    }
+
+    // LAB 6: Stateful interaction and remote state update
+    // add-to-cart writes into Firestore so cart persists per user account
+    await _firestoreService.addToCart(uid: userId, product: product);
 
     if (!mounted) {
       return;
@@ -64,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
-    await _storageService.clearLoginStatus();
+    await FirebaseAuth.instance.signOut();
 
     if (!mounted) {
       return;
@@ -76,15 +111,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openCart() {
+  Future<void> _openCart() async {
+    final userId = await _requireUserId();
+    if (userId == null) {
+      return;
+    }
+
+    final cartItems = await _firestoreService.getCartItems(userId);
+
+    if (!mounted) {
+      return;
+    }
+
     // LAB 5: Navigator.push to move between screens
     // This creates a new route and opens the cart page on top
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         // LAB 5: Passing data between screens
         // The cart screen receives current items so it can render totals and rows
-        builder: (context) =>
-            CartScreen(items: List<Product>.unmodifiable(_cartItems)),
+        builder: (context) => CartScreen(items: cartItems),
       ),
     );
   }
