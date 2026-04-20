@@ -146,6 +146,29 @@ class _HomeScreenState extends State<HomeScreen> {
     ).showSnackBar(SnackBar(content: Text('${product.title} added to cart')));
   }
 
+  Future<void> _removeSingleFromCart(Product product) async {
+    final index = _cartItems.indexWhere((item) => item.id == product.id);
+    if (index == -1) {
+      return;
+    }
+
+    setState(() {
+      _cartItems.removeAt(index);
+      _cartCount = _cartItems.length;
+    });
+
+    await _storageService.saveCartCount(_cartCount);
+  }
+
+  Future<void> _clearCart() async {
+    setState(() {
+      _cartItems.clear();
+      _cartCount = 0;
+    });
+
+    await _storageService.saveCartCount(0);
+  }
+
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
   }
@@ -164,8 +187,11 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute<void>(
         // LAB 5: Passing data between screens
         // The cart screen receives current items so it can render totals and rows
-        builder: (context) =>
-            CartScreen(items: List<Product>.unmodifiable(_cartItems)),
+        builder: (context) => CartScreen(
+          items: _cartItems,
+          onRemoveItem: _removeSingleFromCart,
+          onClearCart: _clearCart,
+        ),
       ),
     );
   }

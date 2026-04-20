@@ -2,17 +2,57 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 
-class CartScreen extends StatelessWidget {
-  const CartScreen({super.key, required this.items});
+class CartScreen extends StatefulWidget {
+  const CartScreen({
+    super.key,
+    required this.items,
+    required this.onRemoveItem,
+    required this.onClearCart,
+  });
 
   final List<Product> items;
+  final Future<void> Function(Product product) onRemoveItem;
+  final Future<void> Function() onClearCart;
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  Future<void> _removeItem(Product product) async {
+    await widget.onRemoveItem(product);
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
+  Future<void> _clearAllItems() async {
+    await widget.onClearCart();
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
+    final items = widget.items;
     final total = items.fold<double>(0, (sum, item) => sum + item.price);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cart')),
+      appBar: AppBar(
+        title: const Text('Cart'),
+        actions: [
+          if (items.isNotEmpty)
+            IconButton(
+              onPressed: _clearAllItems,
+              icon: const Icon(Icons.delete_sweep_outlined),
+              tooltip: 'Clear cart',
+            ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: items.isEmpty
           ? const Center(child: Text('Your cart is empty.'))
           : ListView.builder(
@@ -56,7 +96,17 @@ class CartScreen extends StatelessWidget {
                       ),
                       title: Text(product.title),
                       subtitle: Text(product.category),
-                      trailing: Text('Rs. ${product.price.toStringAsFixed(2)}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Rs. ${product.price.toStringAsFixed(2)}'),
+                          IconButton(
+                            onPressed: () => _removeItem(product),
+                            icon: const Icon(Icons.remove_circle_outline),
+                            tooltip: 'Remove one',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
