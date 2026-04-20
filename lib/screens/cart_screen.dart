@@ -63,7 +63,7 @@ class _CartScreenState extends State<CartScreen> {
                   return Card(
                     child: ListTile(
                       title: const Text('Total'),
-                      trailing: Text('Rs. ${total.toStringAsFixed(2)}'),
+                      trailing: Text('\$${total.toStringAsFixed(2)}'),
                     ),
                   );
                 }
@@ -99,7 +99,7 @@ class _CartScreenState extends State<CartScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Rs. ${product.price.toStringAsFixed(2)}'),
+                          Text('\$${product.price.toStringAsFixed(2)}'),
                           IconButton(
                             onPressed: () => _removeItem(product),
                             icon: const Icon(Icons.remove_circle_outline),

@@ -75,7 +75,7 @@ class ProductListScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Rs. ${product.price.toStringAsFixed(2)}',
+                          '\$${product.price.toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 12),
