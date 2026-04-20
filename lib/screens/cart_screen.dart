@@ -23,7 +23,7 @@ class CartScreen extends StatelessWidget {
                   return Card(
                     child: ListTile(
                       title: const Text('Total'),
-                      trailing: Text('\$${total.toStringAsFixed(2)}'),
+                      trailing: Text('Rs. ${total.toStringAsFixed(2)}'),
                     ),
                   );
                 }
@@ -56,7 +56,7 @@ class CartScreen extends StatelessWidget {
                       ),
                       title: Text(product.title),
                       subtitle: Text(product.category),
-                      trailing: Text('\$${product.price.toStringAsFixed(2)}'),
+                      trailing: Text('Rs. ${product.price.toStringAsFixed(2)}'),
                     ),
                   ),
                 );

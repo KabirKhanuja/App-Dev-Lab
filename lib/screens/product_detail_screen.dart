@@ -40,7 +40,7 @@ class ProductDetailScreen extends StatelessWidget {
           Text(product.category, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 16),
           Text(
-            '\$${product.price.toStringAsFixed(2)}',
+            'Rs. ${product.price.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),

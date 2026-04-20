@@ -84,6 +84,8 @@ In this project:
 - Product list is rendered with `ListView.separated` in `lib/screens/product_list_screen.dart`.
 - Cart list is rendered with `ListView.builder` in `lib/screens/cart_screen.dart`.
 - Product and cart entries use `Card` widgets.
+- Product search uses a `HashMap<String, List<int>>` index in `lib/screens/home_screen.dart`.
+- Search flow: tokenize product title/category -> store token to product-index mapping -> on user input, collect token-prefix matches -> intersect matches for all typed terms -> return filtered products.
 
 ### Lab 8: Fetching Data from APIs
 Concepts:

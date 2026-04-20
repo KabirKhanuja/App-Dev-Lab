@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -18,11 +20,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _apiService = ApiService();
   final _storageService = StorageService();
+  final _searchController = TextEditingController();
   // LAB 8: api data source is consumed on the home screen
   // so products are loaded from the internet and then shown in the list ui
   late final Future<List<Product>> _productsFuture;
   final List<Product> _cartItems = [];
   int _cartCount = 0;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -31,8 +35,87 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadCartCount();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // We map each normalized word token to product indexes so search can find
+  // matching products quickly by token-prefix lookup.
+  HashMap<String, List<int>> _buildSearchIndex(List<Product> products) {
+    final index = HashMap<String, List<int>>();
+
+    for (var i = 0; i < products.length; i++) {
+      final product = products[i];
+      final searchable = '${product.title} ${product.category}'.toLowerCase();
+      final tokens = searchable
+          .split(RegExp(r'[^a-z0-9]+'))
+          .where((token) => token.isNotEmpty)
+          .toSet();
+
+      for (final token in tokens) {
+        index.putIfAbsent(token, () => <int>[]).add(i);
+      }
+    }
+
+    return index;
+  }
+
+  List<Product> _searchProducts(
+    List<Product> products,
+    HashMap<String, List<int>> index,
+    String query,
+  ) {
+    // For multi-word input, we keep only products present in all term matches,
+    // which gives accurate narrowing (for example "wireless head" -> headphones)
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return products;
+    }
+
+    final terms = normalized
+        .split(RegExp(r'\s+'))
+        .where((term) => term.isNotEmpty)
+        .toList();
+    if (terms.isEmpty) {
+      return products;
+    }
+
+    Set<int>? result;
+
+    for (final term in terms) {
+      final matchesForTerm = <int>{};
+
+      index.forEach((token, positions) {
+        if (token.startsWith(term)) {
+          matchesForTerm.addAll(positions);
+        }
+      });
+
+      if (result == null) {
+        result = matchesForTerm;
+      } else {
+        result = result.intersection(matchesForTerm);
+      }
+
+      if (result.isEmpty) {
+        break;
+      }
+    }
+
+    final sortedIndexes = (result ?? <int>{}).toList()..sort();
+    return sortedIndexes.map((i) => products[i]).toList();
+  }
+
   Future<void> _loadCartCount() async {
     final savedCartCount = await _storageService.getCartCount();
+    final correctedCartCount = _cartItems.isEmpty ? 0 : savedCartCount;
+
+    if (correctedCartCount != savedCartCount) {
+      await _storageService.saveCartCount(correctedCartCount);
+    }
+
     if (!mounted) {
       return;
     }
@@ -40,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // LAB 6: setState updates UI when local state changes
     // whenever saved values are loaded, the badge updates instantly on screen
     setState(() {
-      _cartCount = savedCartCount;
+      _cartCount = correctedCartCount;
     });
   }
 
@@ -68,6 +151,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openCart() async {
+    if (_cartItems.isEmpty && _cartCount != 0) {
+      setState(() {
+        _cartCount = 0;
+      });
+      await _storageService.saveCartCount(0);
+    }
+
     // LAB 5: Navigator.push to move between screens
     // This creates a new route and opens the cart page on top
     Navigator.of(context).push(
@@ -117,24 +207,64 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final products = snapshot.data ?? const <Product>[];
+          // Built HashMap index from product tokens before filtering.
+          // This keeps the search implementation structured and easy to explain.
+          final searchIndex = _buildSearchIndex(products);
+          final filteredProducts = _searchProducts(
+            products,
+            searchIndex,
+            _searchQuery,
+          );
 
-          return ProductListScreen(
-            products: products,
-            onAddToCart: _addToCart,
-            onProductTap: (product) {
-              // LAB 5: Multi page navigation to product details
-              // Tapping an item takes the user to a separate detail view
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (context) => ProductDetailScreen(
-                    // LAB 5: Passing selected product to detail screen
-                    // The selected product object is sent directly to the next page
-                    product: product,
-                    onAddToCart: _addToCart,
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search products',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
                   ),
                 ),
-              );
-            },
+              ),
+              Expanded(
+                child: ProductListScreen(
+                  products: filteredProducts,
+                  onAddToCart: _addToCart,
+                  onProductTap: (product) {
+                    // LAB 5: Multi page navigation to product details
+                    // Tapping an item takes the user to a separate detail view
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => ProductDetailScreen(
+                          // LAB 5: Passing selected product to detail screen
+                          // The selected product object is sent directly to the next page
+                          product: product,
+                          onAddToCart: _addToCart,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
