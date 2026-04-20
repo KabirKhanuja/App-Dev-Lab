@@ -127,7 +127,15 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MiniCart Login')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Image.asset('assets/app-logo.png', width: 28, height: 28),
+            const SizedBox(width: 10),
+            const Text('MiniCart Login'),
+          ],
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

@@ -174,7 +174,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MiniCart'),
+        title: Row(
+          children: [
+            Image.asset('assets/app-logo.png', width: 28, height: 28),
+            const SizedBox(width: 10),
+            const Text('MiniCart'),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: _logout,
