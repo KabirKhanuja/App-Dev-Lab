@@ -1,34 +1,42 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'create_account_screen.dart';
 import '../services/firestore_service.dart';
+import 'home_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class CreateAccountScreen extends StatefulWidget {
+  const CreateAccountScreen({super.key, this.initialEmail});
+
+  final String? initialEmail;
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  // LAB 4: Form key + controllers manage user input
-  // This gives us control over form validation and field values
+class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final TextEditingController _emailController;
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
   final _firestoreService = FirestoreService();
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail ?? '');
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -38,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final credentials = await _auth.signInWithEmailAndPassword(
+      final credentials = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -47,6 +55,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         await _firestoreService.upsertUserProfile(user: user);
       }
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
     } on FirebaseAuthException catch (e) {
       if (!mounted) {
         return;
@@ -61,25 +78,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _openCreateAccount() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => CreateAccountScreen(
-          initialEmail: _emailController.text.trim().isEmpty
-              ? null
-              : _emailController.text.trim(),
-        ),
-      ),
-    );
-  }
-
   void _showAuthError(FirebaseAuthException e) {
-    String message = 'Authentication failed. Please try again.';
-    if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-      message = 'No account found with these credentials.';
-    } else if (e.code == 'wrong-password') {
-      message = 'Incorrect password.';
-    } else if (e.code == 'email-already-in-use') {
+    String message = 'Could not create the account. Please try again.';
+    if (e.code == 'email-already-in-use') {
       message = 'This email is already registered.';
     } else if (e.code == 'invalid-email') {
       message = 'Please enter a valid email address.';
@@ -97,15 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset('assets/app-logo.png', width: 28, height: 28),
-            const SizedBox(width: 10),
-            const Text('MiniCart Login'),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -115,23 +108,18 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Form(
-                  // LAB 3: Login UI built with layout widgets like Column/SizedBox
-                  // The spacing and alignment are handled using simple layout widgets
-
-                  // LAB 4: Form + TextFormField validators for input validation
-                  // Each input is checked before allowing navigation to the home screen
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Welcome back',
+                        'Create your MiniCart account',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to continue to MiniCart.',
+                        'Register once and you will be signed in right away.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -166,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Enter your password';
+                            return 'Enter a password';
                           }
 
                           if (value.length < 6) {
@@ -176,9 +164,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        decoration: const InputDecoration(
+                          labelText: 'Confirm password',
+                          prefixIcon: Icon(Icons.lock_reset_outlined),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Confirm your password';
+                          }
+
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+
+                          return null;
+                        },
+                      ),
                       const SizedBox(height: 24),
                       FilledButton(
-                        onPressed: _isLoading ? null : _handleLogin,
+                        onPressed: _isLoading ? null : _handleRegister,
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
@@ -187,12 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Login'),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: _isLoading ? null : _openCreateAccount,
-                        child: const Text('Create Account'),
+                            : const Text('Register'),
                       ),
                     ],
                   ),
