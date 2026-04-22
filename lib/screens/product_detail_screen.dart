@@ -50,7 +50,11 @@ class ProductDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () => onAddToCart(product),
+            onPressed: () {
+              onAddToCart(product);
+              // LAB 5: Navigator.pop to return to the previous screen
+              Navigator.of(context).pop();
+            },
             icon: const Icon(Icons.add_shopping_cart_outlined),
             label: const Text('Add to Cart'),
           ),

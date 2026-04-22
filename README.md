@@ -63,6 +63,7 @@ Concepts:
 In this project:
 - Login to home navigation uses `pushReplacement`.
 - Home to details and home to cart use `push`.
+- Product details uses `pop` after add-to-cart to return to home.
 - Product/cart data is passed as constructor parameters.
 - Main routing logic is in `lib/screens/home_screen.dart` and `lib/screens/login_screen.dart`.
 
