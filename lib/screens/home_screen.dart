@@ -59,8 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // 'shoe' : [0,3,5]
-
     return index;
   }
 
