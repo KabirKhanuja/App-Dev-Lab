@@ -29,7 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
+    // form state is basically the current state of the form and its fields, and validate() checks if all validators pass
+    final formState = _formKey.currentState;
+    // if it's null or if any validator returns a non-null error string, we stop the login process and show validation errors
+    if (formState == null || !formState.validate()) {
       return;
     }
 

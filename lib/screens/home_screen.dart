@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
@@ -9,9 +8,17 @@ import '../services/storage_service.dart';
 import 'cart_screen.dart';
 import 'product_detail_screen.dart';
 import 'product_list_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.isDarkModeEnabled,
+    required this.onThemeModeChanged,
+  });
+
+  final bool isDarkModeEnabled;
+  final ValueChanged<bool> onThemeModeChanged;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -169,8 +176,15 @@ class _HomeScreenState extends State<HomeScreen> {
     await _storageService.saveCartCount(0);
   }
 
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => SettingsScreen(
+          isDarkModeEnabled: widget.isDarkModeEnabled,
+          onThemeModeChanged: widget.onThemeModeChanged,
+        ),
+      ),
+    );
   }
 
   Future<void> _openCart() async {
@@ -209,9 +223,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_outlined),
-            tooltip: 'Logout',
+            onPressed: _openSettings,
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
           ),
           Badge(
             isLabelVisible: _cartCount > 0,

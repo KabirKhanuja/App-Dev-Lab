@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/firestore_service.dart';
-import 'home_screen.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key, this.initialEmail});
@@ -37,7 +36,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   }
 
   Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 
@@ -60,10 +60,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         return;
       }
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
       if (!mounted) {
         return;

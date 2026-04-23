@@ -1,8 +1,11 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+// this file is basically the shared preferences of my app
+
 class StorageService {
   static const String _loginKey = 'is_logged_in';
   static const String _cartCountKey = 'cart_count';
+  static const String _darkModeKey = 'is_dark_mode';
 
   Future<bool> isLoggedIn() async {
     // LAB 9: Retrieve saved preference values from local storage
@@ -35,5 +38,15 @@ class StorageService {
     // This makes the cart badge persist across launches
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_cartCountKey, value);
+  }
+
+  Future<bool> isDarkModeEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_darkModeKey) ?? false;
+  }
+
+  Future<void> saveDarkModeEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_darkModeKey, value);
   }
 }
