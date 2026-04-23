@@ -125,16 +125,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Welcome back',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sign in to continue to MiniCart.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      // LAB 3: Stack layers the colored hero background and text,
+                      // while SizedBox keeps the spacing consistent under the header
+                      Stack(
+                        children: [
+                          Container(
+                            height: 132,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          Positioned(
+                            left: 24,
+                            top: 24,
+                            right: 24,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sign in to continue to MiniCart.',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: colorScheme.onPrimaryContainer,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                       TextFormField(
